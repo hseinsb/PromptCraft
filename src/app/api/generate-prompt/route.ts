@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 import { getTemplateById } from "../../../data/industryTemplates";
 
+// Set Node.js runtime with a longer timeout (60 seconds instead of the default 10)
+export const runtime = "nodejs";
+export const maxDuration = 60;
+
 // Initialize OpenAI client
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -112,8 +116,12 @@ export async function POST(req: NextRequest) {
     }
   } catch (error) {
     console.error("Error in generate-prompt route:", error);
+    // Always return a properly formatted JSON response
     return NextResponse.json(
-      { error: "Failed to generate prompt" },
+      {
+        error: "Failed to generate prompt. Please try again.",
+        details: error instanceof Error ? error.message : "Unknown error",
+      },
       { status: 500 }
     );
   }

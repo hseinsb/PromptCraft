@@ -23,7 +23,7 @@ interface PromptFormProps {
 
 export default function PromptForm({
   onPromptGenerated,
-  isLoading,
+  isLoading: parentIsLoading,
 }: PromptFormProps) {
   const [userInput, setUserInput] = useState("");
   const [error, setError] = useState("");
@@ -31,6 +31,7 @@ export default function PromptForm({
     useState<IndustryTemplate | null>(null);
   const { isAuthenticated } = useAuth();
   const [isFocused, setIsFocused] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,6 +47,7 @@ export default function PromptForm({
     }
 
     setError("");
+    setIsLoading(true);
 
     try {
       const response = await fetch("/api/generate-prompt", {
@@ -60,15 +62,23 @@ export default function PromptForm({
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to generate prompt");
+        let errorMessage = "Failed to generate prompt";
+        try {
+          // Try to parse error as JSON
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorMessage;
+        } catch (_parseError) {
+          // If JSON parsing fails, use the status text
+          errorMessage = `${errorMessage}: ${response.status} ${response.statusText}`;
+        }
+        throw new Error(errorMessage);
       }
 
       const data = await response.json();
       onPromptGenerated({
         ...data,
         raw_input: userInput,
-        template_used: selectedTemplate?.id || null,
+        template_used: selectedTemplate?.name || null,
       });
 
       // Clear the input after successful generation
@@ -78,6 +88,9 @@ export default function PromptForm({
       setError(
         error instanceof Error ? error.message : "An unknown error occurred"
       );
+    } finally {
+      // Always clear loading state when done
+      setIsLoading(false);
     }
   };
 
@@ -86,7 +99,40 @@ export default function PromptForm({
   };
 
   return (
-    <div className="w-full max-w-3xl mx-auto p-6 bg-[#1E1E3F] rounded-xl shadow-lg transition-all duration-300 hover:shadow-xl border border-gray-700">
+    <div className="w-full max-w-3xl mx-auto p-6 bg-[#1E1E3F] rounded-xl shadow-lg transition-all duration-300 hover:shadow-xl border border-gray-700 relative">
+      {/* Loading overlay */}
+      {isLoading && (
+        <div className="absolute inset-0 bg-[#14142B]/80 rounded-xl flex flex-col items-center justify-center z-10 backdrop-blur-sm animate-fadeIn">
+          <svg
+            className="animate-spin h-12 w-12 text-purple-400 mb-4"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <circle
+              className="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              strokeWidth="4"
+            ></circle>
+            <path
+              className="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+            ></path>
+          </svg>
+          <p className="text-white text-lg font-medium animate-pulse">
+            Generating your perfect prompt...
+          </p>
+          <p className="text-gray-300 text-sm mt-2 max-w-xs text-center">
+            This may take up to 30 seconds while our AI crafts a personalized
+            prompt
+          </p>
+        </div>
+      )}
+
       <div className="flex items-center space-x-3 mb-4">
         <div className="p-2.5 bg-purple-900/30 rounded-full">
           <FiZap className="text-purple-400 text-xl" />
