@@ -62,13 +62,13 @@ export default function Secret() {
               </p>
               <div className="space-y-2">
                 <div className="p-2 bg-gray-800 rounded border border-gray-700">
-                  "Act as a senior backend developer."
+                  &quot;Act as a senior backend developer.&quot;
                 </div>
                 <div className="p-2 bg-gray-800 rounded border border-gray-700">
-                  "Act as a cinematic film director."
+                  &quot;Act as a cinematic film director.&quot;
                 </div>
                 <div className="p-2 bg-gray-800 rounded border border-gray-700">
-                  "Act as my personal argument coach."
+                  &quot;Act as my personal argument coach.&quot;
                 </div>
               </div>
               <p className="mt-3 text-gray-400 italic">
@@ -98,19 +98,20 @@ export default function Secret() {
               <p className="mb-3 text-gray-300">Describes the task clearly.</p>
               <div className="space-y-2">
                 <div className="p-2 bg-gray-800 rounded border border-gray-700">
-                  "Find the top 5 scenic medium-length hikes near San
-                  Francisco."
+                  &quot;Find the top 5 scenic medium-length hikes near San
+                  Francisco.&quot;
                 </div>
                 <div className="p-2 bg-gray-800 rounded border border-gray-700">
-                  "Debug the following Python code."
+                  &quot;Debug the following Python code.&quot;
                 </div>
                 <div className="p-2 bg-gray-800 rounded border border-gray-700">
-                  "Analyze the logical structure of my philosophical argument."
+                  &quot;Analyze the logical structure of my philosophical
+                  argument.&quot;
                 </div>
               </div>
               <p className="mt-3 text-gray-400 italic">
-                The goal tells the model: "What am I supposed to actually give
-                you?"
+                The goal tells the model: &quot;What am I supposed to actually
+                give you?&quot;
               </p>
             </div>
           )}
@@ -137,14 +138,14 @@ export default function Secret() {
               </p>
               <div className="space-y-2">
                 <div className="p-2 bg-gray-800 rounded border border-gray-700">
-                  "Return a list with bullet points: Name, Location, Distance,
-                  Difficulty, Unique Feature."
+                  &quot;Return a list with bullet points: Name, Location,
+                  Distance, Difficulty, Unique Feature.&quot;
                 </div>
                 <div className="p-2 bg-gray-800 rounded border border-gray-700">
-                  "Write a 3-paragraph analysis."
+                  &quot;Write a 3-paragraph analysis.&quot;
                 </div>
                 <div className="p-2 bg-gray-800 rounded border border-gray-700">
-                  "Return a JSON object with the required data."
+                  &quot;Return a JSON object with the required data.&quot;
                 </div>
               </div>
               <p className="mt-3 text-gray-400 italic">
@@ -175,15 +176,16 @@ export default function Secret() {
               </p>
               <div className="space-y-2">
                 <div className="p-2 bg-gray-800 rounded border border-gray-700">
-                  "We already did Mount Tam, Presidio, and Golden Gate Park."
+                  &quot;We already did Mount Tam, Presidio, and Golden Gate
+                  Park.&quot;
                 </div>
                 <div className="p-2 bg-gray-800 rounded border border-gray-700">
-                  "This code was written for Python 3.11 and is part of a Django
-                  project."
+                  &quot;This code was written for Python 3.11 and is part of a
+                  Django project.&quot;
                 </div>
                 <div className="p-2 bg-gray-800 rounded border border-gray-700">
-                  "I am debating this topic with a libertarian friend who
-                  believes all morals are subjective."
+                  &quot;I am debating this topic with a libertarian friend who
+                  believes all morals are subjective.&quot;
                 </div>
               </div>
               <p className="mt-3 text-gray-400 italic">
@@ -218,13 +220,13 @@ export default function Secret() {
               </p>
               <div className="space-y-2">
                 <div className="p-2 bg-gray-800 rounded border border-gray-700">
-                  "Do not recommend hikes we've done already."
+                  &quot;Do not recommend hikes we&apos;ve done already.&quot;
                 </div>
                 <div className="p-2 bg-gray-800 rounded border border-gray-700">
-                  "Do not exceed 100 lines of code."
+                  &quot;Do not exceed 100 lines of code.&quot;
                 </div>
                 <div className="p-2 bg-gray-800 rounded border border-gray-700">
-                  "Do not accept my assumptions without challenge."
+                  &quot;Do not accept my assumptions without challenge.&quot;
                 </div>
               </div>
               <p className="mt-3 text-gray-400 italic">
@@ -256,17 +258,17 @@ export default function Secret() {
               </p>
               <div className="space-y-2">
                 <div className="p-2 bg-gray-800 rounded border border-gray-700">
-                  "Be brief and direct."
+                  &quot;Be brief and direct.&quot;
                 </div>
                 <div className="p-2 bg-gray-800 rounded border border-gray-700">
-                  "Explain like you're talking to a 10-year-old."
+                  &quot;Explain like you&apos;re talking to a 10-year-old.&quot;
                 </div>
                 <div className="p-2 bg-gray-800 rounded border border-gray-700">
-                  "Use bullet points and bold key items."
+                  &quot;Use bullet points and bold key items.&quot;
                 </div>
               </div>
               <p className="mt-3 text-gray-400 italic">
-                The style gives a consistent voice or presentation to the LLM's
+                The style gives a consistent voice or presentation to the LLM&apos;s
                 responses.
               </p>
             </div>

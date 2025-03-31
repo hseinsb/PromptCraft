@@ -66,14 +66,14 @@ export default function PromptCard({
       const date =
         timestamp && typeof timestamp === "object" && "toDate" in timestamp
           ? timestamp.toDate()
-          : new Date(timestamp as any);
+          : new Date(timestamp);
 
       return date.toLocaleDateString("en-US", {
         year: "numeric",
         month: "short",
         day: "numeric",
       });
-    } catch (_) {
+    } catch {
       return "";
     }
   };
@@ -265,7 +265,7 @@ export default function PromptCard({
                 Original Input
               </h4>
               <div className="text-gray-200 text-sm italic">
-                "{prompt.raw_input}"
+                &quot;{prompt.raw_input}&quot;
               </div>
             </div>
           </div>

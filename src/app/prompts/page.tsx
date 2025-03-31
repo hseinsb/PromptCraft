@@ -5,12 +5,14 @@ import { useAuth } from "../../contexts/AuthContext";
 import PromptForm from "../../components/PromptForm";
 import PromptCard from "../../components/PromptCard";
 import Login from "../../components/Login";
-import { Prompt } from "../../services/promptService";
+import { Prompt as FirebasePrompt } from "../../services/promptService";
 import { nanoid } from "nanoid";
 import { FiFilter, FiStar, FiX } from "react-icons/fi";
 import { getAllTemplates } from "../../data/industryTemplates";
+import { Timestamp } from "firebase/firestore";
 
-// Create a type for prompt data
+// Create a type for prompt data (keeping for reference)
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 interface PromptData {
   title: string;
   role: string;
@@ -23,6 +25,20 @@ interface PromptData {
   raw_input: string;
   template_used?: string | null;
 }
+
+// Create a type for Timestamp
+interface Timestamp {
+  seconds: number;
+  nanoseconds: number;
+  toDate: () => Date;
+  toMillis: () => number;
+  isEqual: (other: Timestamp) => boolean;
+}
+
+// Extend the firebase Prompt type to allow for Date objects in createdAt
+type Prompt = Omit<FirebasePrompt, "createdAt"> & {
+  createdAt?: Date | Timestamp;
+};
 
 export default function PromptsPage() {
   const { isAuthenticated } = useAuth();
@@ -59,24 +75,36 @@ export default function PromptsPage() {
     }
   };
 
-  const handlePromptGenerated = async (promptData: PromptData) => {
+  const handlePromptGenerated = async (promptData: {
+    full_prompt: string;
+    role?: string;
+    goal?: string;
+    format?: string;
+    context?: string;
+    constraints?: string;
+    style?: string;
+    raw_input: string;
+    template_used?: string | null;
+  }) => {
     setIsLoading(true);
     try {
       // Create a new prompt with a generated ID
       const newPrompt: Prompt = {
         id: nanoid(),
-        title: promptData.title,
-        role: promptData.role,
-        goal: promptData.goal,
-        format: promptData.format,
-        context: promptData.context,
-        constraints: promptData.constraints,
-        style: promptData.style,
+        title:
+          promptData.raw_input.slice(0, 50) +
+          (promptData.raw_input.length > 50 ? "..." : ""),
+        role: promptData.role || "",
+        goal: promptData.goal || "",
+        format: promptData.format || "",
+        context: promptData.context || "",
+        constraints: promptData.constraints || "",
+        style: promptData.style || "",
         full_prompt: promptData.full_prompt,
         raw_input: promptData.raw_input,
         template_used: promptData.template_used || null,
         userId: "shared", // We now have a single user
-        createdAt: new Date(),
+        createdAt: new Date(), // This will be stored as a Date object
         favorite: false, // New prompts are not favorites by default
       };
 
@@ -187,7 +215,10 @@ export default function PromptsPage() {
                 Most Recently Generated Prompt
               </h2>
               <PromptCard
-                prompt={generatedPrompt}
+                prompt={{
+                  ...generatedPrompt,
+                  createdAt: generatedPrompt.createdAt instanceof Timestamp ? generatedPrompt.createdAt.toDate().toJSON() : new Date().toJSON()
+                }}
                 onDelete={handleDeletePrompt}
                 onToggleFavorite={handleToggleFavorite}
               />
