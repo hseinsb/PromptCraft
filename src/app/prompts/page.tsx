@@ -51,6 +51,7 @@ export default function PromptsPage() {
   const [prompts, setPrompts] = useState<Prompt[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [generatedPrompt, setGeneratedPrompt] = useState<Prompt | null>(null);
+  const [firebaseInitialized, setFirebaseInitialized] = useState(false);
 
   // New state for filters
   const [industryFilter, setIndustryFilter] = useState<string | null>(null);
@@ -60,6 +61,31 @@ export default function PromptsPage() {
 
   // Get all available industries/templates
   const allTemplates = getAllTemplates();
+
+  // Check Firebase initialization
+  useEffect(() => {
+    console.log("Checking Firebase initialization...");
+    try {
+      // Check if Firebase is properly configured by logging the config
+      import("../../firebase/config")
+        .then((module) => {
+          const { db } = module;
+          console.log("Firebase Firestore initialized:", !!db);
+          console.log(
+            "Firebase project ID:",
+            process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID
+          );
+          setFirebaseInitialized(true);
+        })
+        .catch((error) => {
+          console.error("Firebase initialization error:", error);
+          setFirebaseInitialized(false);
+        });
+    } catch (error) {
+      console.error("Firebase import error:", error);
+      setFirebaseInitialized(false);
+    }
+  }, []);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -71,17 +97,35 @@ export default function PromptsPage() {
   const loadPrompts = async () => {
     if (!isAuthenticated) return;
     setIsLoadingPrompts(true);
+    console.log("Starting to load prompts...");
 
     try {
+      // Check if Firebase is initialized before attempting to load
+      if (!firebaseInitialized) {
+        console.log(
+          "Firebase not initialized yet, falling back to localStorage"
+        );
+        throw new Error("Firebase not initialized");
+      }
+
       // Load from Firebase
+      console.log("Attempting to load prompts from Firebase...");
       const loadedPrompts = await getUserPrompts("shared");
+      console.log(
+        "Prompts loaded from Firebase:",
+        loadedPrompts.length ? loadedPrompts.length : "none"
+      );
       setPrompts(loadedPrompts);
     } catch (error) {
-      console.error("Error loading prompts:", error);
+      console.error("Error loading prompts from Firebase:", error);
       // Fallback to localStorage if Firebase fails
+      console.log("Falling back to localStorage...");
       const savedPrompts = localStorage.getItem("savedPrompts");
       if (savedPrompts) {
+        console.log("Found prompts in localStorage");
         setPrompts(JSON.parse(savedPrompts));
+      } else {
+        console.log("No prompts found in localStorage either");
       }
     } finally {
       setIsLoadingPrompts(false);
@@ -101,12 +145,11 @@ export default function PromptsPage() {
   }) => {
     setIsLoading(true);
     try {
+      console.log("Creating new prompt and saving to Firebase...");
       // Create a new prompt with a generated ID
       const newPrompt: Prompt = {
         id: nanoid(),
-        title:
-          promptData.raw_input.slice(0, 50) +
-          (promptData.raw_input.length > 50 ? "..." : ""),
+        title: promptData.raw_input, // Use the full raw input as title without truncation
         role: promptData.role || "",
         goal: promptData.goal || "",
         format: promptData.format || "",
@@ -120,16 +163,40 @@ export default function PromptsPage() {
         favorite: false, // New prompts are not favorites by default
       };
 
-      // Save to Firebase
-      await savePrompt({
-        ...newPrompt,
-        id: undefined, // Remove ID so Firebase can generate one
-      });
+      // Only try to save to Firebase if it's initialized
+      if (firebaseInitialized) {
+        // Save to Firebase
+        console.log("Saving to Firebase with savePrompt function...");
+        try {
+          // Create a version of the prompt without the ID property
+          // and convert any Date objects to Firestore Timestamps
+          const firestorePrompt = {
+            ...newPrompt,
+            // Use serverTimestamp which will be set on the server
+            // This avoids issues with local Date vs Firestore Timestamp
+          };
 
-      // Reload prompts from Firebase to get the latest data
-      await loadPrompts();
+          // Remove the ID since Firebase will generate one
+          delete (firestorePrompt as any).id;
 
-      // Set the generated prompt
+          // Save to Firestore
+          await savePrompt(firestorePrompt as any);
+          console.log("Successfully saved to Firebase");
+
+          // Reload prompts from Firebase to get the latest data
+          console.log("Reloading prompts from Firebase...");
+          await loadPrompts();
+          console.log("Prompts reloaded from Firebase");
+        } catch (firebaseError) {
+          console.error("Firebase save error:", firebaseError);
+          throw firebaseError; // Re-throw to be caught by the outer catch
+        }
+      } else {
+        console.log("Firebase not initialized, falling back to localStorage");
+        throw new Error("Firebase not initialized");
+      }
+
+      // Find the saved prompt in the loaded prompts
       const savedPrompt =
         prompts.find(
           (p) =>
@@ -144,9 +211,7 @@ export default function PromptsPage() {
       // Fallback to local storage if Firebase fails
       const newPrompt: Prompt = {
         id: nanoid(),
-        title:
-          promptData.raw_input.slice(0, 50) +
-          (promptData.raw_input.length > 50 ? "..." : ""),
+        title: promptData.raw_input,
         role: promptData.role || "",
         goal: promptData.goal || "",
         format: promptData.format || "",
@@ -177,8 +242,18 @@ export default function PromptsPage() {
 
   const handleDeletePrompt = async (promptId: string) => {
     try {
+      // Check if Firebase is initialized before attempting to delete
+      if (!firebaseInitialized) {
+        console.log(
+          "Firebase not initialized yet, falling back to localStorage"
+        );
+        throw new Error("Firebase not initialized");
+      }
+
       // Delete from Firebase
+      console.log("Deleting prompt from Firebase:", promptId);
       await deletePrompt(promptId);
+      console.log("Successfully deleted from Firebase");
 
       // Update local state
       const updatedPrompts = prompts.filter((prompt) => prompt.id !== promptId);
@@ -189,7 +264,7 @@ export default function PromptsPage() {
         setGeneratedPrompt(null);
       }
     } catch (error) {
-      console.error("Error deleting prompt:", error);
+      console.error("Error deleting prompt from Firebase:", error);
 
       // Fallback to local update if Firebase fails
       const updatedPrompts = prompts.filter((prompt) => prompt.id !== promptId);
@@ -208,8 +283,22 @@ export default function PromptsPage() {
     isFavorite: boolean
   ) => {
     try {
+      // Check if Firebase is initialized before attempting to update
+      if (!firebaseInitialized) {
+        console.log(
+          "Firebase not initialized yet, falling back to localStorage"
+        );
+        throw new Error("Firebase not initialized");
+      }
+
       // Update in Firebase
+      console.log(
+        "Updating favorite status in Firebase:",
+        promptId,
+        isFavorite
+      );
       await updatePrompt(promptId, { favorite: isFavorite });
+      console.log("Successfully updated favorite status in Firebase");
 
       // Update local state
       const updatedPrompts = prompts.map((prompt) =>
@@ -222,7 +311,7 @@ export default function PromptsPage() {
         setGeneratedPrompt({ ...generatedPrompt, favorite: isFavorite });
       }
     } catch (error) {
-      console.error("Error updating favorite status:", error);
+      console.error("Error updating favorite status in Firebase:", error);
 
       // Fallback to local update if Firebase fails
       const updatedPrompts = prompts.map((prompt) =>

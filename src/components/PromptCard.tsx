@@ -98,7 +98,7 @@ export default function PromptCard({
         {/* Header */}
         <div className="flex justify-between items-start mb-4">
           <div className="max-w-[80%]">
-            <h3 className="text-xl font-bold text-white break-words group-hover:text-purple-400 transition-colors duration-200">
+            <h3 className="text-xl font-bold text-white break-words text-wrap group-hover:text-purple-400 transition-colors duration-200 overflow-hidden">
               {!isEmpty(prompt.title) ? prompt.title : "Untitled Prompt"}
             </h3>
             <div className="flex flex-wrap items-center mt-1 gap-2">
