@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Prompt } from "../services/promptService";
+import { Timestamp } from "firebase/firestore";
 import {
   FiCopy,
   FiTrash,
@@ -54,6 +55,7 @@ export default function PromptCard({
   const formatDate = (
     timestamp:
       | Date
+      | Timestamp
       | { toDate: () => Date }
       | string
       | number
@@ -63,17 +65,26 @@ export default function PromptCard({
     if (!timestamp) return "";
 
     try {
-      const date =
-        timestamp && typeof timestamp === "object" && "toDate" in timestamp
-          ? timestamp.toDate()
-          : new Date(timestamp);
+      let date: Date;
+
+      if (timestamp instanceof Date) {
+        date = timestamp;
+      } else if (
+        timestamp instanceof Timestamp ||
+        (typeof timestamp === "object" && "toDate" in timestamp)
+      ) {
+        date = timestamp.toDate();
+      } else {
+        date = new Date(timestamp);
+      }
 
       return date.toLocaleDateString("en-US", {
         year: "numeric",
         month: "short",
         day: "numeric",
       });
-    } catch {
+    } catch (err) {
+      console.error("Error formatting date:", err);
       return "";
     }
   };

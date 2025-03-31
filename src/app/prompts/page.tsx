@@ -42,8 +42,15 @@ interface CustomTimestamp {
 }
 
 // Extend the firebase Prompt type to allow for Date objects in createdAt
-type Prompt = Omit<FirebasePrompt, "createdAt"> & {
+type Prompt = Omit<FirebasePrompt, "createdAt" | "id"> & {
+  id?: string;
   createdAt?: Date | Timestamp;
+  favorite?: boolean;
+};
+
+// Type for Firebase operations - without id and with proper Timestamp
+type FirestorePromptData = Omit<Prompt, "id" | "createdAt"> & {
+  createdAt?: Timestamp;
 };
 
 export default function PromptsPage() {
@@ -75,7 +82,7 @@ export default function PromptsPage() {
             "Firebase project ID:",
             process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID
           );
-          setFirebaseInitialized(true);
+          setFirebaseInitialized(!!db);
         })
         .catch((error) => {
           console.error("Firebase initialization error:", error);
@@ -115,7 +122,18 @@ export default function PromptsPage() {
         "Prompts loaded from Firebase:",
         loadedPrompts.length ? loadedPrompts.length : "none"
       );
-      setPrompts(loadedPrompts);
+
+      // Ensure the loaded prompts have the correct structure
+      const formattedPrompts = loadedPrompts.map((prompt) => ({
+        ...prompt,
+        // Ensure id exists
+        id: prompt.id || nanoid(),
+        // Ensure favorite is a boolean
+        favorite:
+          typeof prompt.favorite === "boolean" ? prompt.favorite : false,
+      }));
+
+      setPrompts(formattedPrompts);
     } catch (error) {
       console.error("Error loading prompts from Firebase:", error);
       // Fallback to localStorage if Firebase fails
@@ -169,22 +187,17 @@ export default function PromptsPage() {
         console.log("Saving to Firebase with savePrompt function...");
         try {
           // Create a version of the prompt without the ID property
-          // and convert any Date objects to Firestore Timestamps
-          const firestorePrompt = {
-            ...newPrompt,
-            // Use serverTimestamp which will be set on the server
-            // This avoids issues with local Date vs Firestore Timestamp
-          };
+          const { id, createdAt, ...promptWithoutIdAndCreatedAt } = newPrompt;
 
-          // Remove the ID since Firebase will generate one
-          delete (firestorePrompt as any).id;
+          // This creates a new object without id and createdAt
+          const firestorePrompt = promptWithoutIdAndCreatedAt;
 
           // Save to Firestore
-          await savePrompt(firestorePrompt as any);
+          await savePrompt(firestorePrompt);
           console.log("Successfully saved to Firebase");
 
           // Reload prompts from Firebase to get the latest data
-          console.log("Reloading prompts from Firebase...");
+          console.log("Reloading prompts from Firebase after save...");
           await loadPrompts();
           console.log("Prompts reloaded from Firebase");
         } catch (firebaseError) {
@@ -242,6 +255,8 @@ export default function PromptsPage() {
 
   const handleDeletePrompt = async (promptId: string) => {
     try {
+      console.log("Deleting prompt with ID:", promptId);
+
       // Check if Firebase is initialized before attempting to delete
       if (!firebaseInitialized) {
         console.log(
@@ -263,6 +278,9 @@ export default function PromptsPage() {
       if (generatedPrompt && generatedPrompt.id === promptId) {
         setGeneratedPrompt(null);
       }
+
+      // Force reload prompts from Firebase
+      await loadPrompts();
     } catch (error) {
       console.error("Error deleting prompt from Firebase:", error);
 
@@ -300,7 +318,7 @@ export default function PromptsPage() {
       await updatePrompt(promptId, { favorite: isFavorite });
       console.log("Successfully updated favorite status in Firebase");
 
-      // Update local state
+      // Update local state immediately for a responsive UI
       const updatedPrompts = prompts.map((prompt) =>
         prompt.id === promptId ? { ...prompt, favorite: isFavorite } : prompt
       );
@@ -310,6 +328,9 @@ export default function PromptsPage() {
       if (generatedPrompt && generatedPrompt.id === promptId) {
         setGeneratedPrompt({ ...generatedPrompt, favorite: isFavorite });
       }
+
+      // Reload prompts from Firebase to ensure consistent state
+      await loadPrompts();
     } catch (error) {
       console.error("Error updating favorite status in Firebase:", error);
 
@@ -375,15 +396,7 @@ export default function PromptsPage() {
                 Most Recently Generated Prompt
               </h2>
               <PromptCard
-                prompt={{
-                  ...generatedPrompt,
-                  createdAt:
-                    generatedPrompt.createdAt instanceof Timestamp
-                      ? generatedPrompt.createdAt.toDate().toJSON()
-                      : generatedPrompt.createdAt instanceof Date
-                      ? generatedPrompt.createdAt.toJSON()
-                      : new Date().toJSON(),
-                }}
+                prompt={generatedPrompt as FirebasePrompt}
                 onDelete={handleDeletePrompt}
                 onToggleFavorite={handleToggleFavorite}
               />
@@ -531,7 +544,7 @@ export default function PromptsPage() {
               {filteredPrompts.map((prompt) => (
                 <PromptCard
                   key={prompt.id}
-                  prompt={prompt}
+                  prompt={prompt as FirebasePrompt}
                   onDelete={handleDeletePrompt}
                   onToggleFavorite={handleToggleFavorite}
                 />
