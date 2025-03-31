@@ -123,33 +123,38 @@ body {
 }
 
 /* Improved button styles */
-.btn {
-  @apply px-4 py-2 rounded-lg font-medium transition-all duration-300 transform;
+@layer components {
+  .btn {
+    @apply px-4 py-2 rounded-lg font-medium transition-all duration-300 transform;
+  }
+
+  .btn:hover {
+    @apply -translate-y-0.5 shadow-md;
+  }
+
+  .btn:active {
+    @apply translate-y-0;
+  }
+
+  .btn-primary {
+    @apply bg-purple-600 hover:bg-purple-700 active:bg-purple-800 text-white;
+  }
+
+  .btn-secondary {
+    @apply bg-gray-700 hover:bg-gray-600 active:bg-gray-500 text-gray-200;
+  }
+
+  .btn-danger {
+    @apply bg-red-600 hover:bg-red-700 active:bg-red-800 text-white;
+  }
+
+  /* Improved card styling */
+  .card {
+    @apply bg-gray-800 rounded-xl overflow-hidden transition-all duration-300 border border-gray-700;
+  }
 }
 
-.btn:hover {
-  @apply -translate-y-0.5 shadow-md;
-}
-
-.btn:active {
-  @apply translate-y-0;
-}
-
-.btn-primary {
-  @apply bg-purple-600 hover:bg-purple-700 active:bg-purple-800 text-white;
-}
-
-.btn-secondary {
-  @apply bg-gray-700 hover:bg-gray-600 active:bg-gray-500 text-gray-200;
-}
-
-.btn-danger {
-  @apply bg-red-600 hover:bg-red-700 active:bg-red-800 text-white;
-}
-
-/* Improved card styling */
 .card {
-  @apply bg-gray-800 rounded-xl overflow-hidden transition-all duration-300 border border-gray-700;
   box-shadow: var(--card-shadow);
 }
 
@@ -158,16 +163,18 @@ body {
 }
 
 /* Form elements styling */
-input,
-textarea,
-select {
-  @apply transition-all duration-200 rounded-lg border border-gray-600 bg-gray-700 text-white p-3 focus:outline-none;
-}
+@layer components {
+  input,
+  textarea,
+  select {
+    @apply transition-all duration-200 rounded-lg border border-gray-600 bg-gray-700 text-white p-3 focus:outline-none;
+  }
 
-input:focus,
-textarea:focus,
-select:focus {
-  @apply ring-2 ring-purple-500 ring-opacity-50 border-transparent;
+  input:focus,
+  textarea:focus,
+  select:focus {
+    @apply ring-2 ring-purple-500 ring-opacity-50 border-transparent;
+  }
 }
 
 /* Better scroll behavior */
