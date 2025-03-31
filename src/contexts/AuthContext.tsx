@@ -11,6 +11,7 @@ import {
 interface AuthContextType {
   isAuthenticated: boolean;
   loading: boolean;
+  authInitialized: boolean;
   login: (password: string) => Promise<boolean>;
   logout: () => void;
 }
@@ -29,12 +30,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Check for authentication in localStorage when component mounts
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [loading, setLoading] = useState(true);
+  const [authInitialized, setAuthInitialized] = useState(false);
 
   useEffect(() => {
     // Check if user is authenticated from localStorage
     const authStatus = localStorage.getItem("promptcraft-auth");
     setIsAuthenticated(authStatus === "authenticated");
     setLoading(false);
+    setAuthInitialized(true); // Mark auth as initialized
+    console.log(
+      "Auth initialized, isAuthenticated:",
+      authStatus === "authenticated"
+    );
   }, []);
 
   async function login(password: string): Promise<boolean> {
@@ -55,6 +62,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Store authentication status in localStorage
         localStorage.setItem("promptcraft-auth", "authenticated");
         setIsAuthenticated(true);
+
+        // Trigger a page reload to ensure all components properly initialize with auth
+        // This is a simpler alternative to SSR/SSG for this specific app
+        window.location.reload();
       }
 
       return isValid;
@@ -73,6 +84,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const value = {
     isAuthenticated,
     loading,
+    authInitialized,
     login,
     logout,
   };

@@ -49,7 +49,7 @@ type Prompt = Omit<FirebasePrompt, "createdAt" | "id"> & {
 };
 
 export default function PromptsPage() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, authInitialized } = useAuth();
   const [prompts, setPrompts] = useState<Prompt[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [generatedPrompt, setGeneratedPrompt] = useState<Prompt | null>(null);
@@ -60,6 +60,9 @@ export default function PromptsPage() {
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [isLoadingPrompts, setIsLoadingPrompts] = useState(false);
+
+  // Track whether initial data has been loaded
+  const [initialDataLoaded, setInitialDataLoaded] = useState(false);
 
   // Get all available industries/templates
   const allTemplates = getAllTemplates();
@@ -79,9 +82,16 @@ export default function PromptsPage() {
           );
           setFirebaseInitialized(!!db);
 
-          // Once Firebase is initialized, load prompts immediately
-          if (!!db && isAuthenticated) {
+          // Once Firebase is initialized and auth is ready, load prompts
+          if (
+            !!db &&
+            isAuthenticated &&
+            authInitialized &&
+            !initialDataLoaded
+          ) {
+            console.log("Auth and Firebase both initialized, loading prompts");
             loadPrompts();
+            setInitialDataLoaded(true);
           }
         })
         .catch((error) => {
@@ -92,7 +102,26 @@ export default function PromptsPage() {
       console.error("Firebase import error:", error);
       setFirebaseInitialized(false);
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, authInitialized, initialDataLoaded]);
+
+  // Additional effect to handle when user logs in directly (no page reload)
+  useEffect(() => {
+    if (
+      isAuthenticated &&
+      firebaseInitialized &&
+      authInitialized &&
+      !initialDataLoaded
+    ) {
+      console.log("Auth state changed to authenticated, loading prompts");
+      loadPrompts();
+      setInitialDataLoaded(true);
+    }
+  }, [
+    isAuthenticated,
+    firebaseInitialized,
+    authInitialized,
+    initialDataLoaded,
+  ]);
 
   const loadPrompts = async () => {
     if (!isAuthenticated) return;
