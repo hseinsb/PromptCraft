@@ -48,11 +48,6 @@ type Prompt = Omit<FirebasePrompt, "createdAt" | "id"> & {
   favorite?: boolean;
 };
 
-// Type for Firebase operations - without id and with proper Timestamp
-type FirestorePromptData = Omit<Prompt, "id" | "createdAt"> & {
-  createdAt?: Timestamp;
-};
-
 export default function PromptsPage() {
   const { isAuthenticated } = useAuth();
   const [prompts, setPrompts] = useState<Prompt[]>([]);
@@ -83,6 +78,11 @@ export default function PromptsPage() {
             process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID
           );
           setFirebaseInitialized(!!db);
+
+          // Once Firebase is initialized, load prompts immediately
+          if (!!db && isAuthenticated) {
+            loadPrompts();
+          }
         })
         .catch((error) => {
           console.error("Firebase initialization error:", error);
@@ -92,13 +92,6 @@ export default function PromptsPage() {
       console.error("Firebase import error:", error);
       setFirebaseInitialized(false);
     }
-  }, []);
-
-  useEffect(() => {
-    if (isAuthenticated) {
-      loadPrompts();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated]);
 
   const loadPrompts = async () => {
@@ -120,7 +113,8 @@ export default function PromptsPage() {
       const loadedPrompts = await getUserPrompts("shared");
       console.log(
         "Prompts loaded from Firebase:",
-        loadedPrompts.length ? loadedPrompts.length : "none"
+        loadedPrompts.length ? loadedPrompts.length : "none",
+        loadedPrompts
       );
 
       // Ensure the loaded prompts have the correct structure
@@ -133,6 +127,7 @@ export default function PromptsPage() {
           typeof prompt.favorite === "boolean" ? prompt.favorite : false,
       }));
 
+      console.log("Formatted prompts:", formattedPrompts);
       setPrompts(formattedPrompts);
     } catch (error) {
       console.error("Error loading prompts from Firebase:", error);
@@ -187,14 +182,27 @@ export default function PromptsPage() {
         console.log("Saving to Firebase with savePrompt function...");
         try {
           // Create a version of the prompt without the ID property
+          // We need to use destructuring to remove properties safely
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
           const { id, createdAt, ...promptWithoutIdAndCreatedAt } = newPrompt;
 
           // This creates a new object without id and createdAt
           const firestorePrompt = promptWithoutIdAndCreatedAt;
 
           // Save to Firestore
-          await savePrompt(firestorePrompt);
-          console.log("Successfully saved to Firebase");
+          const savedId = await savePrompt(firestorePrompt);
+          console.log("Successfully saved to Firebase with ID:", savedId);
+
+          // Set the generated prompt with the proper Firebase ID
+          const savedPrompt = {
+            ...newPrompt,
+            id: savedId,
+          };
+
+          setGeneratedPrompt(savedPrompt);
+
+          // Update the prompts list with the new prompt
+          setPrompts((prevPrompts) => [savedPrompt, ...prevPrompts]);
 
           // Reload prompts from Firebase to get the latest data
           console.log("Reloading prompts from Firebase after save...");
@@ -208,16 +216,6 @@ export default function PromptsPage() {
         console.log("Firebase not initialized, falling back to localStorage");
         throw new Error("Firebase not initialized");
       }
-
-      // Find the saved prompt in the loaded prompts
-      const savedPrompt =
-        prompts.find(
-          (p) =>
-            p.raw_input === newPrompt.raw_input &&
-            p.full_prompt === newPrompt.full_prompt
-        ) || newPrompt;
-
-      setGeneratedPrompt(savedPrompt);
     } catch (error) {
       console.error("Error saving prompt:", error);
 
