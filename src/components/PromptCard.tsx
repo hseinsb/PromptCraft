@@ -37,7 +37,11 @@ export default function PromptCard({
 
   const handleDeleteClick = () => {
     if (isDeleteConfirming) {
-      onDelete(prompt.id!);
+      if (prompt.id) {
+        onDelete(prompt.id);
+      } else {
+        console.error("Cannot delete prompt: Missing ID");
+      }
       setIsDeleteConfirming(false);
     } else {
       setIsDeleteConfirming(true);
@@ -47,8 +51,10 @@ export default function PromptCard({
   };
 
   const handleFavoriteClick = () => {
-    if (onToggleFavorite) {
-      onToggleFavorite(prompt.id!, !prompt.favorite);
+    if (onToggleFavorite && prompt.id) {
+      onToggleFavorite(prompt.id, !prompt.favorite);
+    } else if (!prompt.id) {
+      console.error("Cannot toggle favorite: Missing ID");
     }
   };
 
@@ -74,8 +80,15 @@ export default function PromptCard({
         (typeof timestamp === "object" && "toDate" in timestamp)
       ) {
         date = timestamp.toDate();
-      } else {
+      } else if (
+        typeof timestamp === "string" ||
+        typeof timestamp === "number"
+      ) {
         date = new Date(timestamp);
+      } else {
+        // Default fallback
+        console.log("Unknown timestamp format:", timestamp);
+        return "";
       }
 
       return date.toLocaleDateString("en-US", {
@@ -84,7 +97,7 @@ export default function PromptCard({
         day: "numeric",
       });
     } catch (err) {
-      console.error("Error formatting date:", err);
+      console.error("Error formatting date:", err, "for timestamp:", timestamp);
       return "";
     }
   };
@@ -94,14 +107,32 @@ export default function PromptCard({
     return !str || str.trim() === "";
   };
 
+  // Safely access properties to prevent errors
+  const safePrompt = {
+    id: prompt.id || "",
+    title: prompt.title || "",
+    role: prompt.role || "",
+    goal: prompt.goal || "",
+    format: prompt.format || "",
+    context: prompt.context || "",
+    constraints: prompt.constraints || "",
+    style: prompt.style || "",
+    full_prompt: prompt.full_prompt || "",
+    raw_input: prompt.raw_input || "",
+    template_used: prompt.template_used || null,
+    createdAt: prompt.createdAt,
+    userId: prompt.userId || "",
+    favorite: typeof prompt.favorite === "boolean" ? prompt.favorite : false,
+  };
+
   // Only show fields with actual content
   const hasDetails =
-    !isEmpty(prompt.format) ||
-    !isEmpty(prompt.context) ||
-    !isEmpty(prompt.constraints) ||
-    !isEmpty(prompt.style);
+    !isEmpty(safePrompt.format) ||
+    !isEmpty(safePrompt.context) ||
+    !isEmpty(safePrompt.constraints) ||
+    !isEmpty(safePrompt.style);
 
-  const hasRoleGoal = !isEmpty(prompt.role) || !isEmpty(prompt.goal);
+  const hasRoleGoal = !isEmpty(safePrompt.role) || !isEmpty(safePrompt.goal);
 
   return (
     <div className="bg-[#1E1E3F] rounded-xl shadow-md overflow-hidden transition-all duration-300 hover:shadow-lg border border-gray-700">
@@ -110,18 +141,20 @@ export default function PromptCard({
         <div className="flex justify-between items-start mb-4">
           <div className="max-w-[80%]">
             <h3 className="text-xl font-bold text-white break-words text-wrap group-hover:text-purple-400 transition-colors duration-200 overflow-hidden">
-              {!isEmpty(prompt.title) ? prompt.title : "Untitled Prompt"}
+              {!isEmpty(safePrompt.title)
+                ? safePrompt.title
+                : "Untitled Prompt"}
             </h3>
             <div className="flex flex-wrap items-center mt-1 gap-2">
-              {prompt.template_used && (
+              {safePrompt.template_used && (
                 <div className="flex items-center text-xs text-purple-400 bg-purple-900/20 px-2 py-0.5 rounded-full">
                   <FiTag className="mr-1" size={10} />
-                  <span>{prompt.template_used}</span>
+                  <span>{safePrompt.template_used}</span>
                 </div>
               )}
-              {formatDate(prompt.createdAt) && (
+              {formatDate(safePrompt.createdAt) && (
                 <span className="text-xs text-gray-400">
-                  {formatDate(prompt.createdAt)}
+                  {formatDate(safePrompt.createdAt)}
                 </span>
               )}
             </div>
@@ -131,10 +164,12 @@ export default function PromptCard({
               <button
                 onClick={handleFavoriteClick}
                 className={`text-gray-400 hover:text-yellow-400 transition-colors p-2 rounded-full hover:bg-yellow-900/20 ${
-                  prompt.favorite ? "text-yellow-400 bg-yellow-900/20" : ""
+                  safePrompt.favorite ? "text-yellow-400 bg-yellow-900/20" : ""
                 }`}
                 aria-label={
-                  prompt.favorite ? "Remove from favorites" : "Add to favorites"
+                  safePrompt.favorite
+                    ? "Remove from favorites"
+                    : "Add to favorites"
                 }
               >
                 <FiStar size={18} />
@@ -176,21 +211,21 @@ export default function PromptCard({
         {/* Main content - Roles and Goals if available */}
         {hasRoleGoal && (
           <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-4">
-            {!isEmpty(prompt.role) && (
+            {!isEmpty(safePrompt.role) && (
               <div className="bg-gradient-to-br from-gray-800 to-purple-900/30 p-4 rounded-lg shadow-sm border border-purple-900/30">
                 <h4 className="text-sm uppercase font-semibold text-purple-400 flex items-center mb-2">
                   <FiZap className="mr-1" size={14} /> Role
                 </h4>
-                <div className="text-gray-200 text-sm">{prompt.role}</div>
+                <div className="text-gray-200 text-sm">{safePrompt.role}</div>
               </div>
             )}
 
-            {!isEmpty(prompt.goal) && (
+            {!isEmpty(safePrompt.goal) && (
               <div className="bg-gradient-to-br from-gray-800 to-purple-900/30 p-4 rounded-lg shadow-sm border border-purple-900/30">
                 <h4 className="text-sm uppercase font-semibold text-purple-400 flex items-center mb-2">
                   <FiZap className="mr-1" size={14} /> Goal
                 </h4>
-                <div className="text-gray-200 text-sm">{prompt.goal}</div>
+                <div className="text-gray-200 text-sm">{safePrompt.goal}</div>
               </div>
             )}
           </div>
@@ -203,9 +238,9 @@ export default function PromptCard({
               !isExpanded ? "line-clamp-3" : ""
             }`}
           >
-            {!isExpanded ? prompt.full_prompt : null}
+            {!isExpanded ? safePrompt.full_prompt : null}
           </div>
-          {!isExpanded && prompt.full_prompt.length > 300 && (
+          {!isExpanded && safePrompt.full_prompt.length > 300 && (
             <div className="mt-2 text-xs text-purple-400">
               Expand to see full prompt...
             </div>
@@ -218,43 +253,47 @@ export default function PromptCard({
             {/* Remaining fields - only if they have content */}
             {hasDetails && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {!isEmpty(prompt.format) && (
+                {!isEmpty(safePrompt.format) && (
                   <div className="bg-gray-800 p-4 rounded-lg border border-gray-700">
                     <h4 className="text-sm uppercase font-semibold text-gray-300 mb-2">
                       Format
                     </h4>
-                    <div className="text-gray-200 text-sm">{prompt.format}</div>
+                    <div className="text-gray-200 text-sm">
+                      {safePrompt.format}
+                    </div>
                   </div>
                 )}
 
-                {!isEmpty(prompt.context) && (
+                {!isEmpty(safePrompt.context) && (
                   <div className="bg-gray-800 p-4 rounded-lg border border-gray-700">
                     <h4 className="text-sm uppercase font-semibold text-gray-300 mb-2">
                       Context
                     </h4>
                     <div className="text-gray-200 text-sm">
-                      {prompt.context}
+                      {safePrompt.context}
                     </div>
                   </div>
                 )}
 
-                {!isEmpty(prompt.constraints) && (
+                {!isEmpty(safePrompt.constraints) && (
                   <div className="bg-gray-800 p-4 rounded-lg border border-gray-700">
                     <h4 className="text-sm uppercase font-semibold text-gray-300 mb-2">
                       Constraints
                     </h4>
                     <div className="text-gray-200 text-sm">
-                      {prompt.constraints}
+                      {safePrompt.constraints}
                     </div>
                   </div>
                 )}
 
-                {!isEmpty(prompt.style) && (
+                {!isEmpty(safePrompt.style) && (
                   <div className="bg-gray-800 p-4 rounded-lg border border-gray-700">
                     <h4 className="text-sm uppercase font-semibold text-gray-300 mb-2">
                       Style
                     </h4>
-                    <div className="text-gray-200 text-sm">{prompt.style}</div>
+                    <div className="text-gray-200 text-sm">
+                      {safePrompt.style}
+                    </div>
                   </div>
                 )}
               </div>
@@ -266,7 +305,7 @@ export default function PromptCard({
                 Full Prompt
               </h4>
               <div className="text-gray-200 whitespace-pre-wrap text-sm border-l-2 border-purple-700 pl-3">
-                {prompt.full_prompt}
+                {safePrompt.full_prompt}
               </div>
             </div>
 
@@ -276,7 +315,7 @@ export default function PromptCard({
                 Original Input
               </h4>
               <div className="text-gray-200 text-sm italic">
-                &quot;{prompt.raw_input}&quot;
+                &quot;{safePrompt.raw_input}&quot;
               </div>
             </div>
           </div>

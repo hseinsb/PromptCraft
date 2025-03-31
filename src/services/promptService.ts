@@ -64,10 +64,27 @@ export async function getUserPrompts(userId: string) {
 
     querySnapshot.forEach((doc) => {
       console.log("Document data:", doc.id, doc.data());
-      prompts.push({
+      // Ensure all fields exist with proper defaults
+      const data = doc.data();
+
+      const prompt: Prompt = {
         id: doc.id,
-        ...doc.data(),
-      } as Prompt);
+        title: data.title || "",
+        role: data.role || "",
+        goal: data.goal || "",
+        format: data.format || "",
+        context: data.context || "",
+        constraints: data.constraints || "",
+        style: data.style || "",
+        full_prompt: data.full_prompt || "",
+        raw_input: data.raw_input || "",
+        template_used: data.template_used || null,
+        createdAt: data.createdAt || null,
+        userId: data.userId || userId,
+        favorite: typeof data.favorite === "boolean" ? data.favorite : false,
+      };
+
+      prompts.push(prompt);
     });
 
     console.log("Retrieved prompts count:", prompts.length);

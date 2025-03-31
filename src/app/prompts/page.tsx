@@ -119,17 +119,34 @@ export default function PromptsPage() {
 
       if (loadedPrompts && loadedPrompts.length > 0) {
         // Ensure the loaded prompts have the correct structure
-        const formattedPrompts = loadedPrompts.map((prompt) => ({
-          ...prompt,
-          // Ensure id exists
-          id: prompt.id || nanoid(),
-          // Ensure favorite is a boolean
-          favorite:
-            typeof prompt.favorite === "boolean" ? prompt.favorite : false,
-        }));
+        const formattedPrompts = loadedPrompts.map((prompt) => {
+          // Ensure we're working with a clean object
+          const cleanPrompt = {
+            id: prompt.id || nanoid(),
+            title: prompt.title || "",
+            role: prompt.role || "",
+            goal: prompt.goal || "",
+            format: prompt.format || "",
+            context: prompt.context || "",
+            constraints: prompt.constraints || "",
+            style: prompt.style || "",
+            full_prompt: prompt.full_prompt || "",
+            raw_input: prompt.raw_input || "",
+            template_used: prompt.template_used || null,
+            userId: prompt.userId || "shared",
+            favorite:
+              typeof prompt.favorite === "boolean" ? prompt.favorite : false,
+            // Handle createdAt specially
+            createdAt: prompt.createdAt || new Date(),
+          };
+          return cleanPrompt;
+        });
 
         console.log("Formatted prompts:", formattedPrompts);
         setPrompts(formattedPrompts);
+      } else {
+        console.log("No prompts loaded from Firebase");
+        setPrompts([]);
       }
     } catch (error) {
       console.error("Error loading prompts from Firebase:", error);
@@ -141,6 +158,7 @@ export default function PromptsPage() {
         setPrompts(JSON.parse(savedPrompts));
       } else {
         console.log("No prompts found in localStorage either");
+        setPrompts([]);
       }
     } finally {
       setIsLoadingPrompts(false);
