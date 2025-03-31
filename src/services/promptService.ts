@@ -28,6 +28,7 @@ export interface Prompt {
   template_used?: string | null;
   createdAt?: Timestamp;
   userId: string;
+  favorite?: boolean;
 }
 
 const PROMPTS_COLLECTION = "prompts";

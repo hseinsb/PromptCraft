@@ -10,14 +10,20 @@ import {
   FiTag,
   FiZap,
   FiCheck,
+  FiStar,
 } from "react-icons/fi";
 
 interface PromptCardProps {
   prompt: Prompt;
   onDelete: (id: string) => void;
+  onToggleFavorite?: (id: string, favorite: boolean) => void;
 }
 
-export default function PromptCard({ prompt, onDelete }: PromptCardProps) {
+export default function PromptCard({
+  prompt,
+  onDelete,
+  onToggleFavorite,
+}: PromptCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [copied, setCopied] = useState(false);
   const [isDeleteConfirming, setIsDeleteConfirming] = useState(false);
@@ -36,6 +42,12 @@ export default function PromptCard({ prompt, onDelete }: PromptCardProps) {
       setIsDeleteConfirming(true);
       // Auto reset after 3 seconds
       setTimeout(() => setIsDeleteConfirming(false), 3000);
+    }
+  };
+
+  const handleFavoriteClick = () => {
+    if (onToggleFavorite) {
+      onToggleFavorite(prompt.id!, !prompt.favorite);
     }
   };
 
@@ -92,6 +104,19 @@ export default function PromptCard({ prompt, onDelete }: PromptCardProps) {
             </div>
           </div>
           <div className="flex items-center space-x-2 flex-shrink-0">
+            {onToggleFavorite && (
+              <button
+                onClick={handleFavoriteClick}
+                className={`text-gray-400 hover:text-yellow-400 transition-colors p-2 rounded-full hover:bg-yellow-900/20 ${
+                  prompt.favorite ? "text-yellow-400 bg-yellow-900/20" : ""
+                }`}
+                aria-label={
+                  prompt.favorite ? "Remove from favorites" : "Add to favorites"
+                }
+              >
+                <FiStar size={18} />
+              </button>
+            )}
             <button
               onClick={handleCopy}
               className="text-gray-400 hover:text-blue-400 transition-colors p-2 rounded-full hover:bg-blue-900/20 relative"

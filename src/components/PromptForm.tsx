@@ -68,7 +68,7 @@ export default function PromptForm({
       onPromptGenerated({
         ...data,
         raw_input: userInput,
-        template_used: selectedTemplate?.name || null,
+        template_used: selectedTemplate?.id || null,
       });
 
       // Clear the input after successful generation
