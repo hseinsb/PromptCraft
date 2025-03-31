@@ -195,6 +195,7 @@ export default function PromptsPage() {
           const newPrompt: Prompt = {
             ...promptToSave,
             id: savedId,
+            createdAt: new Date(), // Add local timestamp for immediate display
           };
 
           // Set as the current generated prompt
@@ -343,19 +344,21 @@ export default function PromptsPage() {
   };
 
   // Apply filters to get filtered prompts
-  const filteredPrompts = prompts.filter((prompt) => {
-    // Filter by industry if an industry filter is selected
-    const matchesIndustry =
-      !industryFilter ||
-      prompt.template_used === industryFilter ||
-      prompt.template_used ===
-        allTemplates.find((t) => t.id === industryFilter)?.name;
+  const filteredPrompts = prompts
+    .filter((prompt) => !!prompt.id) // Only include prompts with valid IDs
+    .filter((prompt) => {
+      // Filter by industry if an industry filter is selected
+      const matchesIndustry =
+        !industryFilter ||
+        prompt.template_used === industryFilter ||
+        prompt.template_used ===
+          allTemplates.find((t) => t.id === industryFilter)?.name;
 
-    // Filter by favorites if the favorites filter is enabled
-    const matchesFavorite = !showFavoritesOnly || prompt.favorite === true;
+      // Filter by favorites if the favorites filter is enabled
+      const matchesFavorite = !showFavoritesOnly || prompt.favorite === true;
 
-    return matchesIndustry && matchesFavorite;
-  });
+      return matchesIndustry && matchesFavorite;
+    });
 
   // Toggle filters visibility
   const toggleFilters = () => {
