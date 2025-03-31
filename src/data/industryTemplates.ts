@@ -1,5 +1,3 @@
-import { nanoid } from "nanoid";
-
 export interface IndustryTemplate {
   id: string;
   name: string;

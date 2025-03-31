@@ -51,17 +51,29 @@ export default function PromptCard({
     }
   };
 
-  const formatDate = (timestamp: any) => {
+  const formatDate = (
+    timestamp:
+      | Date
+      | { toDate: () => Date }
+      | string
+      | number
+      | null
+      | undefined
+  ) => {
     if (!timestamp) return "";
 
     try {
-      const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+      const date =
+        timestamp && typeof timestamp === "object" && "toDate" in timestamp
+          ? timestamp.toDate()
+          : new Date(timestamp as any);
+
       return date.toLocaleDateString("en-US", {
         year: "numeric",
         month: "short",
         day: "numeric",
       });
-    } catch (error) {
+    } catch (_) {
       return "";
     }
   };

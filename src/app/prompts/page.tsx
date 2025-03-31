@@ -5,15 +5,24 @@ import { useAuth } from "../../contexts/AuthContext";
 import PromptForm from "../../components/PromptForm";
 import PromptCard from "../../components/PromptCard";
 import Login from "../../components/Login";
-import {
-  getUserPrompts,
-  savePrompt,
-  deletePrompt,
-  Prompt,
-} from "../../services/promptService";
+import { Prompt } from "../../services/promptService";
 import { nanoid } from "nanoid";
 import { FiFilter, FiStar, FiX } from "react-icons/fi";
 import { getAllTemplates } from "../../data/industryTemplates";
+
+// Create a type for prompt data
+interface PromptData {
+  title: string;
+  role: string;
+  goal: string;
+  format: string;
+  context: string;
+  constraints: string;
+  style: string;
+  full_prompt: string;
+  raw_input: string;
+  template_used?: string | null;
+}
 
 export default function PromptsPage() {
   const { isAuthenticated } = useAuth();
@@ -33,6 +42,7 @@ export default function PromptsPage() {
     if (isAuthenticated) {
       loadPrompts();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated]);
 
   const loadPrompts = async () => {
@@ -49,7 +59,7 @@ export default function PromptsPage() {
     }
   };
 
-  const handlePromptGenerated = async (promptData: any) => {
+  const handlePromptGenerated = async (promptData: PromptData) => {
     setIsLoading(true);
     try {
       // Create a new prompt with a generated ID
