@@ -117,18 +117,20 @@ export default function PromptsPage() {
         loadedPrompts
       );
 
-      // Ensure the loaded prompts have the correct structure
-      const formattedPrompts = loadedPrompts.map((prompt) => ({
-        ...prompt,
-        // Ensure id exists
-        id: prompt.id || nanoid(),
-        // Ensure favorite is a boolean
-        favorite:
-          typeof prompt.favorite === "boolean" ? prompt.favorite : false,
-      }));
+      if (loadedPrompts && loadedPrompts.length > 0) {
+        // Ensure the loaded prompts have the correct structure
+        const formattedPrompts = loadedPrompts.map((prompt) => ({
+          ...prompt,
+          // Ensure id exists
+          id: prompt.id || nanoid(),
+          // Ensure favorite is a boolean
+          favorite:
+            typeof prompt.favorite === "boolean" ? prompt.favorite : false,
+        }));
 
-      console.log("Formatted prompts:", formattedPrompts);
-      setPrompts(formattedPrompts);
+        console.log("Formatted prompts:", formattedPrompts);
+        setPrompts(formattedPrompts);
+      }
     } catch (error) {
       console.error("Error loading prompts from Firebase:", error);
       // Fallback to localStorage if Firebase fails
@@ -159,58 +161,53 @@ export default function PromptsPage() {
     setIsLoading(true);
     try {
       console.log("Creating new prompt and saving to Firebase...");
-      // Create a new prompt with a generated ID
-      const newPrompt: Prompt = {
-        id: nanoid(),
-        title: promptData.raw_input, // Use the full raw input as title without truncation
-        role: promptData.role || "",
-        goal: promptData.goal || "",
-        format: promptData.format || "",
-        context: promptData.context || "",
-        constraints: promptData.constraints || "",
-        style: promptData.style || "",
-        full_prompt: promptData.full_prompt,
-        raw_input: promptData.raw_input,
-        template_used: promptData.template_used || null,
-        userId: "shared", // We now have a single user
-        favorite: false, // New prompts are not favorites by default
-      };
 
       // Only try to save to Firebase if it's initialized
       if (firebaseInitialized) {
-        // Save to Firebase
+        // Save to Firebase first
         console.log("Saving to Firebase with savePrompt function...");
         try {
-          // Create a version of the prompt without the ID property
-          // We need to use destructuring to remove properties safely
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          const { id, createdAt, ...promptWithoutIdAndCreatedAt } = newPrompt;
+          // Create a prompt object without ID for Firebase
+          const promptToSave = {
+            title: promptData.raw_input,
+            role: promptData.role || "",
+            goal: promptData.goal || "",
+            format: promptData.format || "",
+            context: promptData.context || "",
+            constraints: promptData.constraints || "",
+            style: promptData.style || "",
+            full_prompt: promptData.full_prompt,
+            raw_input: promptData.raw_input,
+            template_used: promptData.template_used || null,
+            userId: "shared",
+            favorite: false,
+          };
 
-          // This creates a new object without id and createdAt
-          const firestorePrompt = promptWithoutIdAndCreatedAt;
-
-          // Save to Firestore
-          const savedId = await savePrompt(firestorePrompt);
+          // Save to Firestore and get the ID
+          const savedId = await savePrompt(promptToSave);
           console.log("Successfully saved to Firebase with ID:", savedId);
 
-          // Set the generated prompt with the proper Firebase ID
-          const savedPrompt = {
-            ...newPrompt,
+          if (!savedId) {
+            throw new Error("Failed to get ID from Firebase");
+          }
+
+          // Create new prompt with the Firebase ID
+          const newPrompt: Prompt = {
+            ...promptToSave,
             id: savedId,
           };
 
-          setGeneratedPrompt(savedPrompt);
+          // Set as the current generated prompt
+          setGeneratedPrompt(newPrompt);
 
-          // Update the prompts list with the new prompt
-          setPrompts((prevPrompts) => [savedPrompt, ...prevPrompts]);
+          // Add to the prompts list directly
+          setPrompts((prev) => [newPrompt, ...prev]);
 
-          // Reload prompts from Firebase to get the latest data
-          console.log("Reloading prompts from Firebase after save...");
-          await loadPrompts();
-          console.log("Prompts reloaded from Firebase");
+          // No need to reload all prompts - we already have all the data
+          console.log("Prompt saved and added to state:", newPrompt);
         } catch (firebaseError) {
           console.error("Firebase save error:", firebaseError);
-          throw firebaseError; // Re-throw to be caught by the outer catch
+          throw firebaseError;
         }
       } else {
         console.log("Firebase not initialized, falling back to localStorage");
