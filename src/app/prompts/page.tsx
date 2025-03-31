@@ -5,7 +5,13 @@ import { useAuth } from "../../contexts/AuthContext";
 import PromptForm from "../../components/PromptForm";
 import PromptCard from "../../components/PromptCard";
 import Login from "../../components/Login";
-import { Prompt as FirebasePrompt } from "../../services/promptService";
+import {
+  Prompt as FirebasePrompt,
+  savePrompt,
+  getUserPrompts,
+  deletePrompt,
+  updatePrompt,
+} from "../../services/promptService";
 import { nanoid } from "nanoid";
 import { FiFilter, FiStar, FiX } from "react-icons/fi";
 import { getAllTemplates } from "../../data/industryTemplates";
@@ -27,12 +33,12 @@ interface PromptData {
 }
 
 // Create a type for Timestamp
-interface Timestamp {
+interface CustomTimestamp {
   seconds: number;
   nanoseconds: number;
   toDate: () => Date;
   toMillis: () => number;
-  isEqual: (other: Timestamp) => boolean;
+  isEqual: (other: CustomTimestamp) => boolean;
 }
 
 // Extend the firebase Prompt type to allow for Date objects in createdAt
@@ -50,6 +56,7 @@ export default function PromptsPage() {
   const [industryFilter, setIndustryFilter] = useState<string | null>(null);
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
+  const [isLoadingPrompts, setIsLoadingPrompts] = useState(false);
 
   // Get all available industries/templates
   const allTemplates = getAllTemplates();
@@ -63,15 +70,21 @@ export default function PromptsPage() {
 
   const loadPrompts = async () => {
     if (!isAuthenticated) return;
+    setIsLoadingPrompts(true);
 
     try {
-      // Instead of loading from Firebase, we'll load from localStorage for simplicity
+      // Load from Firebase
+      const loadedPrompts = await getUserPrompts("shared");
+      setPrompts(loadedPrompts);
+    } catch (error) {
+      console.error("Error loading prompts:", error);
+      // Fallback to localStorage if Firebase fails
       const savedPrompts = localStorage.getItem("savedPrompts");
       if (savedPrompts) {
         setPrompts(JSON.parse(savedPrompts));
       }
-    } catch (error) {
-      console.error("Error loading prompts:", error);
+    } finally {
+      setIsLoadingPrompts(false);
     }
   };
 
@@ -104,8 +117,48 @@ export default function PromptsPage() {
         raw_input: promptData.raw_input,
         template_used: promptData.template_used || null,
         userId: "shared", // We now have a single user
-        createdAt: new Date(), // This will be stored as a Date object
         favorite: false, // New prompts are not favorites by default
+      };
+
+      // Save to Firebase
+      await savePrompt({
+        ...newPrompt,
+        id: undefined, // Remove ID so Firebase can generate one
+      });
+
+      // Reload prompts from Firebase to get the latest data
+      await loadPrompts();
+
+      // Set the generated prompt
+      const savedPrompt =
+        prompts.find(
+          (p) =>
+            p.raw_input === newPrompt.raw_input &&
+            p.full_prompt === newPrompt.full_prompt
+        ) || newPrompt;
+
+      setGeneratedPrompt(savedPrompt);
+    } catch (error) {
+      console.error("Error saving prompt:", error);
+
+      // Fallback to local storage if Firebase fails
+      const newPrompt: Prompt = {
+        id: nanoid(),
+        title:
+          promptData.raw_input.slice(0, 50) +
+          (promptData.raw_input.length > 50 ? "..." : ""),
+        role: promptData.role || "",
+        goal: promptData.goal || "",
+        format: promptData.format || "",
+        context: promptData.context || "",
+        constraints: promptData.constraints || "",
+        style: promptData.style || "",
+        full_prompt: promptData.full_prompt,
+        raw_input: promptData.raw_input,
+        template_used: promptData.template_used || null,
+        userId: "shared",
+        createdAt: new Date(),
+        favorite: false,
       };
 
       // Set as the currently generated prompt
@@ -115,10 +168,8 @@ export default function PromptsPage() {
       const updatedPrompts = [newPrompt, ...prompts];
       setPrompts(updatedPrompts);
 
-      // Save to localStorage
+      // Save to localStorage as fallback
       localStorage.setItem("savedPrompts", JSON.stringify(updatedPrompts));
-    } catch (error) {
-      console.error("Error saving prompt:", error);
     } finally {
       setIsLoading(false);
     }
@@ -126,12 +177,12 @@ export default function PromptsPage() {
 
   const handleDeletePrompt = async (promptId: string) => {
     try {
-      // Filter out the deleted prompt
+      // Delete from Firebase
+      await deletePrompt(promptId);
+
+      // Update local state
       const updatedPrompts = prompts.filter((prompt) => prompt.id !== promptId);
       setPrompts(updatedPrompts);
-
-      // Save to localStorage
-      localStorage.setItem("savedPrompts", JSON.stringify(updatedPrompts));
 
       // If the deleted prompt is the currently displayed one, clear it
       if (generatedPrompt && generatedPrompt.id === promptId) {
@@ -139,16 +190,28 @@ export default function PromptsPage() {
       }
     } catch (error) {
       console.error("Error deleting prompt:", error);
+
+      // Fallback to local update if Firebase fails
+      const updatedPrompts = prompts.filter((prompt) => prompt.id !== promptId);
+      setPrompts(updatedPrompts);
+      localStorage.setItem("savedPrompts", JSON.stringify(updatedPrompts));
+
+      if (generatedPrompt && generatedPrompt.id === promptId) {
+        setGeneratedPrompt(null);
+      }
     }
   };
 
-  // New function to handle toggling favorites
+  // Function to handle toggling favorites
   const handleToggleFavorite = async (
     promptId: string,
     isFavorite: boolean
   ) => {
     try {
-      // Update the prompt in the list
+      // Update in Firebase
+      await updatePrompt(promptId, { favorite: isFavorite });
+
+      // Update local state
       const updatedPrompts = prompts.map((prompt) =>
         prompt.id === promptId ? { ...prompt, favorite: isFavorite } : prompt
       );
@@ -158,11 +221,19 @@ export default function PromptsPage() {
       if (generatedPrompt && generatedPrompt.id === promptId) {
         setGeneratedPrompt({ ...generatedPrompt, favorite: isFavorite });
       }
-
-      // Save to localStorage
-      localStorage.setItem("savedPrompts", JSON.stringify(updatedPrompts));
     } catch (error) {
       console.error("Error updating favorite status:", error);
+
+      // Fallback to local update if Firebase fails
+      const updatedPrompts = prompts.map((prompt) =>
+        prompt.id === promptId ? { ...prompt, favorite: isFavorite } : prompt
+      );
+      setPrompts(updatedPrompts);
+      localStorage.setItem("savedPrompts", JSON.stringify(updatedPrompts));
+
+      if (generatedPrompt && generatedPrompt.id === promptId) {
+        setGeneratedPrompt({ ...generatedPrompt, favorite: isFavorite });
+      }
     }
   };
 
@@ -217,7 +288,12 @@ export default function PromptsPage() {
               <PromptCard
                 prompt={{
                   ...generatedPrompt,
-                  createdAt: generatedPrompt.createdAt instanceof Timestamp ? generatedPrompt.createdAt.toDate().toJSON() : new Date().toJSON()
+                  createdAt:
+                    generatedPrompt.createdAt instanceof Timestamp
+                      ? generatedPrompt.createdAt.toDate().toJSON()
+                      : generatedPrompt.createdAt instanceof Date
+                      ? generatedPrompt.createdAt.toJSON()
+                      : new Date().toJSON(),
                 }}
                 onDelete={handleDeletePrompt}
                 onToggleFavorite={handleToggleFavorite}
@@ -329,7 +405,31 @@ export default function PromptsPage() {
             </div>
           )}
 
-          {filteredPrompts.length === 0 ? (
+          {isLoadingPrompts ? (
+            <div className="bg-[#1E1E3F] p-6 rounded-lg shadow-md text-center border border-gray-700">
+              <svg
+                className="animate-spin h-8 w-8 text-purple-400 mx-auto mb-3"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                ></circle>
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                ></path>
+              </svg>
+              <p className="text-gray-300">Loading your prompts...</p>
+            </div>
+          ) : filteredPrompts.length === 0 ? (
             <div className="bg-[#1E1E3F] p-6 rounded-lg shadow-md text-center border border-gray-700">
               <p className="text-gray-300">
                 {prompts.length === 0
