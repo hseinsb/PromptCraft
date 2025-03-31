@@ -61,13 +61,10 @@ export default function PromptsPage() {
   const [showFilters, setShowFilters] = useState(false);
   const [isLoadingPrompts, setIsLoadingPrompts] = useState(false);
 
-  // Track whether initial data has been loaded
-  const [initialDataLoaded, setInitialDataLoaded] = useState(false);
-
   // Get all available industries/templates
   const allTemplates = getAllTemplates();
 
-  // Check Firebase initialization
+  // Check Firebase initialization and load prompts when authenticated
   useEffect(() => {
     console.log("Checking Firebase initialization...");
     try {
@@ -83,15 +80,9 @@ export default function PromptsPage() {
           setFirebaseInitialized(!!db);
 
           // Once Firebase is initialized and auth is ready, load prompts
-          if (
-            !!db &&
-            isAuthenticated &&
-            authInitialized &&
-            !initialDataLoaded
-          ) {
+          if (!!db && isAuthenticated && authInitialized) {
             console.log("Auth and Firebase both initialized, loading prompts");
             loadPrompts();
-            setInitialDataLoaded(true);
           }
         })
         .catch((error) => {
@@ -102,26 +93,15 @@ export default function PromptsPage() {
       console.error("Firebase import error:", error);
       setFirebaseInitialized(false);
     }
-  }, [isAuthenticated, authInitialized, initialDataLoaded]);
+  }, [isAuthenticated, authInitialized]);
 
-  // Additional effect to handle when user logs in directly (no page reload)
+  // Separate effect to reload prompts when authentication state changes
   useEffect(() => {
-    if (
-      isAuthenticated &&
-      firebaseInitialized &&
-      authInitialized &&
-      !initialDataLoaded
-    ) {
+    if (isAuthenticated && firebaseInitialized && authInitialized) {
       console.log("Auth state changed to authenticated, loading prompts");
       loadPrompts();
-      setInitialDataLoaded(true);
     }
-  }, [
-    isAuthenticated,
-    firebaseInitialized,
-    authInitialized,
-    initialDataLoaded,
-  ]);
+  }, [isAuthenticated, firebaseInitialized, authInitialized]);
 
   const loadPrompts = async () => {
     if (!isAuthenticated) return;

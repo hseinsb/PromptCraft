@@ -79,6 +79,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Clear authentication from localStorage
     localStorage.removeItem("promptcraft-auth");
     setIsAuthenticated(false);
+
+    // Trigger a page reload to ensure a clean state
+    window.location.reload();
   }
 
   const value = {
