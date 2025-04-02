@@ -61,6 +61,35 @@ export default function PromptsPage() {
   const [showFilters, setShowFilters] = useState(false);
   const [isLoadingPrompts, setIsLoadingPrompts] = useState(false);
 
+  // Custom styles for select options to ensure consistent appearance across browsers
+  const selectStyles = `
+    /* Style for dropdown options */
+    select option {
+      background-color: #1e293b; /* dark bg (slate-800) */
+      color: white;
+    }
+    
+    /* For Firefox */
+    select {
+      -moz-appearance: none;
+      background-color: #1e293b;
+    }
+    
+    /* For Webkit browsers like Chrome/Safari */
+    select::-webkit-scrollbar {
+      width: 8px;
+    }
+    
+    select::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+    
+    select::-webkit-scrollbar-thumb {
+      background-color: #475569;
+      border-radius: 20px;
+    }
+  `;
+
   // Get all available industries/templates
   const allTemplates = getAllTemplates();
 
@@ -404,6 +433,11 @@ export default function PromptsPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
+      {/* Add style tag for custom select styling */}
+      <style jsx global>
+        {selectStyles}
+      </style>
+
       <h1 className="text-3xl font-bold text-center mb-8 text-white">
         Create & Manage Your Prompts
       </h1>
@@ -464,7 +498,8 @@ export default function PromptsPage() {
                   <select
                     value={industryFilter || ""}
                     onChange={(e) => setIndustryFilter(e.target.value || null)}
-                    className="w-full p-2 rounded bg-gray-800 text-white border border-gray-700"
+                    className="w-full p-2 rounded bg-[#1e293b] text-white border border-gray-700 appearance-none"
+                    style={{ WebkitAppearance: "none" }}
                   >
                     <option value="">All Industries</option>
                     {allTemplates.map((template) => (
