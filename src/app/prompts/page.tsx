@@ -5,6 +5,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import PromptForm from "../../components/PromptForm";
 import PromptCard from "../../components/PromptCard";
 import Login from "../../components/Login";
+import CustomDropdown from "../../components/CustomDropdown";
 import {
   Prompt as FirebasePrompt,
   savePrompt,
@@ -492,22 +493,19 @@ export default function PromptsPage() {
               <div className="space-y-4">
                 {/* Industry filter */}
                 <div>
-                  <label className="block text-sm text-gray-300 mb-2">
-                    Industry
-                  </label>
-                  <select
+                  <CustomDropdown
+                    label="Industry"
                     value={industryFilter || ""}
-                    onChange={(e) => setIndustryFilter(e.target.value || null)}
-                    className="w-full p-2 rounded bg-[#1e293b] text-white border border-gray-700 appearance-none"
-                    style={{ WebkitAppearance: "none" }}
-                  >
-                    <option value="">All Industries</option>
-                    {allTemplates.map((template) => (
-                      <option key={template.id} value={template.id}>
-                        {template.name}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={(value) => setIndustryFilter(value || null)}
+                    placeholder="All Industries"
+                    options={[
+                      { value: "", label: "All Industries" },
+                      ...allTemplates.map((template) => ({
+                        value: template.id,
+                        label: template.name,
+                      })),
+                    ]}
+                  />
                 </div>
 
                 {/* Favorites filter */}
