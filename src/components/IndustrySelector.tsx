@@ -29,16 +29,48 @@ export default function IndustrySelector({
     setIsOpen(false);
   };
 
+  // Add a style block to enforce consistent styling
+  const dropdownStyles = `
+    /* Force dropdown styling to be consistent */
+    .industry-dropdown {
+      background-color: #1e293b !important;
+      color: white !important;
+    }
+    
+    .dropdown-item {
+      background-color: #1e293b !important;
+      color: white !important;
+    }
+    
+    .dropdown-item:hover {
+      background-color: #2d3748 !important;
+    }
+    
+    .dropdown-container {
+      background-color: #1e293b !important;
+      border-color: #4b5563 !important;
+    }
+    
+    .dropdown-description {
+      color: #9ca3af !important;
+    }
+  `;
+
   return (
     <div className="mb-4 relative">
-      <label className="block text-sm font-medium mb-2">
+      {/* Add global style */}
+      <style jsx global>
+        {dropdownStyles}
+      </style>
+
+      <label className="block text-sm font-medium mb-2 text-white">
         Industry Template (Optional)
       </label>
 
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between p-2 border rounded-md bg-white dark:bg-gray-700 text-left text-gray-800 dark:text-gray-200"
+        className="industry-dropdown w-full flex items-center justify-between p-2 border rounded-md text-left border-gray-600"
       >
         <span>
           {selectedTemplate
@@ -62,11 +94,11 @@ export default function IndustrySelector({
       </button>
 
       {isOpen && (
-        <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border rounded-md shadow-lg max-h-60 overflow-auto">
-          <div className="p-2 border-b dark:border-gray-700">
+        <div className="dropdown-container absolute z-10 w-full mt-1 border rounded-md shadow-lg max-h-60 overflow-auto">
+          <div className="p-2 border-b border-gray-700">
             <button
               onClick={handleClear}
-              className="w-full text-left p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+              className="dropdown-item w-full text-left p-2 rounded"
             >
               No template (custom prompt)
             </button>
@@ -77,14 +109,14 @@ export default function IndustrySelector({
               <li key={template.id}>
                 <button
                   onClick={() => handleSelect(template)}
-                  className={`w-full text-left p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded ${
+                  className={`dropdown-item w-full text-left p-2 rounded ${
                     selectedTemplateId === template.id
-                      ? "bg-purple-100 dark:bg-purple-900"
+                      ? "bg-purple-900 text-purple-200"
                       : ""
                   }`}
                 >
                   <div className="font-medium">{template.name}</div>
-                  <div className="text-sm text-gray-500 dark:text-gray-400">
+                  <div className="dropdown-description text-sm">
                     {template.description}
                   </div>
                 </button>
@@ -95,14 +127,14 @@ export default function IndustrySelector({
       )}
 
       {selectedTemplate && (
-        <div className="mt-2 p-3 bg-purple-50 dark:bg-gray-700 rounded text-sm">
+        <div className="mt-2 p-3 bg-gray-800 rounded text-sm text-white">
           <p>
             <span className="font-semibold">Role:</span> {selectedTemplate.role}
           </p>
           <p className="mt-1">
             <span className="font-semibold">Goal:</span> {selectedTemplate.goal}
           </p>
-          <p className="mt-2 text-gray-500 dark:text-gray-400">
+          <p className="mt-2 text-gray-400">
             Template will pre-fill the prompt structure based on{" "}
             {selectedTemplate.name} best practices.
           </p>
