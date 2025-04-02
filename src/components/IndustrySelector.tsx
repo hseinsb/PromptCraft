@@ -49,6 +49,9 @@ export default function IndustrySelector({
     .dropdown-container {
       background-color: #1e293b !important;
       border-color: #4b5563 !important;
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.25) !important;
+      opacity: 1 !important;
+      backdrop-filter: none !important; 
     }
     
     .dropdown-description {
@@ -94,7 +97,7 @@ export default function IndustrySelector({
       </button>
 
       {isOpen && (
-        <div className="dropdown-container absolute z-10 w-full mt-1 border rounded-md shadow-lg max-h-60 overflow-auto">
+        <div className="dropdown-container absolute z-50 w-full mt-1 border rounded-md shadow-lg max-h-60 overflow-auto">
           <div className="p-2 border-b border-gray-700">
             <button
               onClick={handleClear}
