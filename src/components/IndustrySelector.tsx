@@ -33,25 +33,37 @@ export default function IndustrySelector({
   const dropdownStyles = `
     /* Force dropdown styling to be consistent */
     .industry-dropdown {
-      background-color: #1e293b !important;
+      background-color: #111827 !important; /* Dark gray (gray-900) */
       color: white !important;
+      border: 1px solid #4b5563 !important;
     }
     
     .dropdown-item {
-      background-color: #1e293b !important;
+      background-color: #111827 !important; /* Dark gray (gray-900) */
       color: white !important;
     }
     
     .dropdown-item:hover {
-      background-color: #2d3748 !important;
+      background-color: #1f2937 !important; /* Slightly lighter on hover */
     }
     
     .dropdown-container {
-      background-color: #1e293b !important;
-      border-color: #4b5563 !important;
+      background-color: #111827 !important; /* Dark gray (gray-900) */
+      border: 1px solid #4b5563 !important;
       box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.25) !important;
       opacity: 1 !important;
       backdrop-filter: none !important; 
+    }
+    
+    /* Make sure any child elements are also opaque */
+    .dropdown-container * {
+      background-color: #111827 !important;
+    }
+    
+    /* Override any potential transparency */
+    .dropdown-container::before,
+    .dropdown-container::after {
+      display: none !important;
     }
     
     .dropdown-description {
@@ -97,8 +109,14 @@ export default function IndustrySelector({
       </button>
 
       {isOpen && (
-        <div className="dropdown-container absolute z-50 w-full mt-1 border rounded-md shadow-lg max-h-60 overflow-auto">
-          <div className="p-2 border-b border-gray-700">
+        <div
+          className="dropdown-container absolute z-50 w-full mt-1 border rounded-md shadow-lg max-h-60 overflow-auto"
+          style={{ backgroundColor: "#111827" }}
+        >
+          <div
+            className="p-2 border-b border-gray-700"
+            style={{ backgroundColor: "#111827" }}
+          >
             <button
               onClick={handleClear}
               className="dropdown-item w-full text-left p-2 rounded"
